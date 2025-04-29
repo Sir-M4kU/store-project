@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_customer_data_customer_data",
+  "info": {
+    "displayName": "customer_data"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "email": {
+      "type": "email",
+      "required": true
+    },
+    "address": {
+      "type": "text",
+      "required": true
+    },
+    "city": {
+      "type": "string",
+      "required": true
+    },
+    "postal_code": {
+      "type": "integer",
+      "required": true
+    }
+  }
+}
