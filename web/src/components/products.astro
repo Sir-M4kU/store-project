@@ -1,0 +1,35 @@
+---
+import Product from "@/components/product.astro";
+import { STRAPI_URL } from "astro:env/client";
+import type { ProductData, ImageData } from "@/types/strapi";
+
+interface Product extends ProductData {
+  image: ImageData;
+}
+
+interface Props {
+  products: Array<Product>;
+}
+
+const { products } = Astro.props;
+---
+
+<section>
+  <ul class="grid grid-cols-4 gap-4">
+    {
+      products.map((product) => (
+        <Product
+          name={product.name}
+          slug={`${Astro.url.origin}/${product.slug}`}
+          price={product.price}
+          image={{
+            src: STRAPI_URL + product.image.url,
+            alt: product.image.caption,
+            width: product.image.width,
+            height: product.image.height,
+          }}
+        />
+      ))
+    }
+  </ul>
+</section>

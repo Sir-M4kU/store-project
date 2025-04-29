@@ -1,0 +1,125 @@
+---
+import { STRAPI_URL } from "astro:env/client";
+import { marked } from "marked";
+import Layout from "@/layouts/Layout.astro";
+import Products from "@/components/products.astro";
+import AddToCart from "@/components/add-to-cart";
+import BuyNow from "@/components/buy-now";
+import { strapiClient } from "@/libs/strapi";
+import type { ProductData, ImageData, CategoryData } from "@/types/strapi";
+import Skeleton from "@/components/skeleton.astro";
+
+const { slug } = Astro.params;
+
+interface Product extends ProductData {
+  image: ImageData;
+  type: CategoryData[];
+}
+
+const productsCollection = strapiClient.collection("products");
+const [product] = await productsCollection
+  .find({
+    filters: {
+      slug: {
+        $eq: slug,
+      },
+    },
+    fields: ["name", "description", "price"],
+    populate: {
+      image: {
+        fields: ["caption", "width", "height", "url"],
+      },
+      type: {
+        fields: ["name"],
+      },
+    },
+  })
+  .then(({ data }) => data as unknown as Array<Product>)
+  .catch((err) => {
+    console.error(err);
+
+    return [null];
+  });
+
+if (!product) {
+  Astro.response.status = 404;
+  Astro.response.statusText = "Not found";
+  return Astro.rewrite("/404");
+}
+
+const relatedProducts = await productsCollection
+  .find({
+    filters: {
+      type: {
+        name: {
+          $in: product.type.map((t) => t.name),
+        },
+      },
+    },
+    fields: ["name", "price", "slug"],
+    populate: {
+      image: {
+        fields: ["caption", "width", "height", "url"],
+      },
+    },
+    sort: "createdAt:desc",
+    pagination: {
+      pageSize: 4,
+    },
+  })
+  .then(
+    ({ data }) => data as unknown as Array<ProductData & { image: ImageData }>,
+  )
+  .catch((err) => {
+    console.error(err);
+
+    return null;
+  });
+const descriptionHTML = await marked(product.description);
+---
+
+<Layout title={product.name}>
+  <section class="flex gap-8">
+    <section class="min-w-xs space-y-4">
+      <img
+        src={STRAPI_URL + product.image.url + "?format=webp"}
+        alt={product.image.caption}
+        width={product.image.width}
+        height={product.image.height}
+        decoding="async"
+        loading="eager"
+        class="h-auto w-xs rounded-md object-cover"
+      />
+
+      <div class="flex flex-col gap-4">
+        <AddToCart product={product} client:only="preact">
+          <Skeleton slot="fallback" class="h-12 w-full rounded-md" />
+        </AddToCart>
+        <BuyNow product={product} client:only="preact">
+          <Skeleton slot="fallback" class="h-12 w-full rounded-md" />
+        </BuyNow>
+      </div>
+    </section>
+    <section class="space-y-4">
+      <h1 class="text-3xl font-semibold">{product.name}</h1>
+      <span class="block text-lg font-light">$ {product.price.toFixed(2)}</span>
+
+      <section class="prose dark:prose-invert prose-h2:font-semibold text-sm">
+        <slot set:html={descriptionHTML} />
+      </section>
+    </section>
+  </section>
+
+  <section class="mt-8">
+    <h3 class="text-lg font-semibold">
+      You might be interested in these other products...
+    </h3>
+    {
+      relatedProducts && relatedProducts.length > 0 ? (
+        <Products products={relatedProducts} />
+      ) : (
+        <span>No related products for this category.</span>
+      )
+    }
+  </section>
+</Layout>

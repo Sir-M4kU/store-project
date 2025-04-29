@@ -1,0 +1,36 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { stripe } from "@/libs/stripe";
+
+const sessionId = Astro.url.searchParams.get("session_id");
+
+if (!sessionId) return Astro.redirect("/");
+
+const { session, error: _error } = await stripe.checkout.sessions
+  .retrieve(sessionId)
+  .then((data) => ({ session: data, error: null }))
+  .catch((err) => {
+    console.error(err);
+    return { session: null, error: "Invalid session" };
+  });
+---
+
+<Layout title="Checkout">
+  <h1 class="font-semibol mb-8 text-3xl">Checkout</h1>
+
+  {
+    session && session.status === "complete" ? (
+      <p>Your payment was succesfully completed. Thank you :)</p>
+    ) : session && session.status === "open" ? (
+      <p>Your payment is still processing</p>
+    ) : (
+      <p>Your session is invalid</p>
+    )
+  }
+</Layout>
+
+<script>
+  import { clearCart } from "@/stores/cart";
+
+  document.addEventListener("DOMContentLoaded", clearCart);
+</script>

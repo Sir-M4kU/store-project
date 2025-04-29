@@ -1,0 +1,12 @@
+---
+interface Props extends astroHTML.JSX.HTMLAttributes {}
+---
+
+<div
+  class:list={[
+    "animate-pulse bg-[oklch(0.205_0_0)]/10 dark:bg-[oklch(0.922_0_0)]/10",
+    Astro.props.class,
+  ]}
+  {...Astro.props}
+>
+</div>

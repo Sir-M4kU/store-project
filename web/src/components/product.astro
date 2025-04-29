@@ -1,0 +1,41 @@
+---
+import { Image } from "astro:assets";
+interface Props {
+  name: string;
+  price: number;
+  slug: string;
+  image: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+  };
+}
+
+const { name, price, slug, image } = Astro.props;
+---
+
+<li class="group rounded-md p-4 hover:bg-slate-100 dark:hover:bg-zinc-700">
+  <a
+    href={slug}
+    class="flex h-full flex-col items-center justify-between gap-4"
+  >
+    <div>
+      <img
+        src={image.src + "?format=webp"}
+        class="object-fit"
+        width={image.width}
+        height={image.height}
+        decoding="async"
+        loading="lazy"
+        class="h-auto w-[200px] rounded-lg"
+        alt={image.alt}
+        aria-describedby={image.alt}
+      />
+    </div>
+    <div class="space-y-2 text-center">
+      <h2 class="font-semibold">{name}</h2>
+      <span class="font-light">$ {price.toFixed(2)}</span>
+    </div>
+  </a>
+</li>

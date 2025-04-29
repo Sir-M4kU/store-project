@@ -1,0 +1,32 @@
+---
+import Header from "@/components/header.astro";
+import Footer from "@/components/footer.astro";
+import "@/styles/global.css";
+import "@fontsource-variable/inter";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>My store | {title}</title>
+  </head>
+  <body class="font-inter dark:bg-zinc-800 dark:text-zinc-50">
+    <Header />
+
+    <main class="py-8 md:mx-auto md:max-w-3xl">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>
