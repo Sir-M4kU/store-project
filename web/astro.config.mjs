@@ -6,14 +6,19 @@ import cloudflare from "@astrojs/cloudflare"
 
 // https://astro.build/config
 export default defineConfig({
+  output: "server",
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true
+    },
+    imageService: "passthrough"
+  }),
   integrations: [preact()],
   vite: {
     plugins: [tailwindcss()],
   },
-  output: "server",
-  adapter: cloudflare(),
-
   env: {
+    validateSecrets: false,
     schema: {
       STRAPI_TOKEN: envField.string({ context: "client", access: "public" }),
       STRIPE_TOKEN: envField.string({ context: "client", access: "public" }),
