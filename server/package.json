@@ -24,7 +24,6 @@
     "react-router-dom": "^6.0.0",
     "sharp": "^0.33.5",
     "strapi-plugin-local-image-sharp": "1.7.0",
-    "stripe": "18.0.0",
     "styled-components": "^6.0.0"
   },
   "devDependencies": {
