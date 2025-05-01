@@ -16,6 +16,9 @@ export default defineConfig({
   integrations: [preact()],
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      external: ["node:tty", "node:os"]
+    }
   },
   env: {
     validateSecrets: false,
@@ -25,6 +28,6 @@ export default defineConfig({
       STRIPE_SECRET: envField.string({ context: "server", access: "secret" }),
       STRAPI_URL: envField.string({ context: "client", access: "public" })
     }
-  },
+  }
 
 });
