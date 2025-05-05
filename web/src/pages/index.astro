@@ -1,58 +1,9 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import Products from "@/components/products.astro";
-import { ProductCollection } from "@/libs/strapi";
-import type { ProductData, ImageData } from "@/types/strapi";
+import { getRecentProducts } from "@/libs/strapi";
 
-interface Product extends ProductData {
-  image: ImageData;
-}
-
-const [products, computers] = await Promise.all([
-  ProductCollection
-    .find({
-      sort: "createdAt:desc",
-      fields: ["name", "price", "slug"],
-      populate: {
-        image: {
-          fields: ["caption", "width", "height", "url"],
-        },
-      },
-      pagination: {
-        pageSize: 8,
-      },
-    })
-    .then(({ data }) => data as unknown as Product[])
-    .catch((err) => {
-      console.error(err);
-      return null;
-    }),
-  ProductCollection
-    .find({
-      filters: {
-        type: {
-          name: {
-            $eq: "Computers",
-          },
-        },
-      },
-      fields: ["name", "price", "slug"],
-      populate: {
-        image: {
-          fields: ["caption", "width", "height", "url"],
-        },
-      },
-      pagination: {
-        pageSize: 4,
-      },
-    })
-    .then(({ data }) => data as unknown as Product[])
-    .catch((err) => {
-      console.error(err);
-
-      return null;
-    }),
-]);
+const products = await getRecentProducts();
 ---
 
 <Layout title="Home">
@@ -62,16 +13,6 @@ const [products, computers] = await Promise.all([
       {
         products && products.length > 0 ? (
           <Products products={products} />
-        ) : (
-          <span>Failed to fetch products</span>
-        )
-      }
-    </section>
-    <section class="space-y-4">
-      <h2 class="text-2xl font-semibold">Computers</h2>
-      {
-        computers && computers.length > 0 ? (
-          <Products products={computers} />
         ) : (
           <span>Failed to fetch products</span>
         )
