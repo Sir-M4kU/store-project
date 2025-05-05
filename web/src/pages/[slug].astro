@@ -5,41 +5,12 @@ import Layout from "@/layouts/Layout.astro";
 import Products from "@/components/products.astro";
 import AddToCart from "@/components/add-to-cart";
 import BuyNow from "@/components/buy-now";
-import { strapiClient } from "@/libs/strapi";
-import type { ProductData, ImageData, CategoryData } from "@/types/strapi";
+import { getProductBySlug, getProductsByCategories } from "@/libs/strapi";
 import Skeleton from "@/components/skeleton.astro";
 
 const { slug } = Astro.params;
 
-interface Product extends ProductData {
-  image: ImageData;
-  type: CategoryData[];
-}
-
-const productsCollection = strapiClient.collection("products");
-const [product] = await productsCollection
-  .find({
-    filters: {
-      slug: {
-        $eq: slug,
-      },
-    },
-    fields: ["name", "description", "price"],
-    populate: {
-      image: {
-        fields: ["caption", "width", "height", "url"],
-      },
-      type: {
-        fields: ["name"],
-      },
-    },
-  })
-  .then(({ data }) => data as unknown as Array<Product>)
-  .catch((err) => {
-    console.error(err);
-
-    return [null];
-  });
+const product = await getProductBySlug(slug);
 
 if (!product) {
   Astro.response.status = 404;
@@ -47,34 +18,9 @@ if (!product) {
   return Astro.rewrite("/404");
 }
 
-const relatedProducts = await productsCollection
-  .find({
-    filters: {
-      type: {
-        name: {
-          $in: product.type.map((t) => t.name),
-        },
-      },
-    },
-    fields: ["name", "price", "slug"],
-    populate: {
-      image: {
-        fields: ["caption", "width", "height", "url"],
-      },
-    },
-    sort: "createdAt:desc",
-    pagination: {
-      pageSize: 4,
-    },
-  })
-  .then(
-    ({ data }) => data as unknown as Array<ProductData & { image: ImageData }>,
-  )
-  .catch((err) => {
-    console.error(err);
-
-    return null;
-  });
+const relatedProducts = await getProductsByCategories(
+  product.type?.map((t) => t.name) || [],
+);
 const descriptionHTML = await marked(product.description);
 ---
 
@@ -82,7 +28,7 @@ const descriptionHTML = await marked(product.description);
   <section class="flex gap-8">
     <section class="min-w-xs space-y-4">
       <img
-        src={STRAPI_URL + product.image.url + "?format=webp"}
+        src={product.image.url + "?format=webp"}
         alt={product.image.caption}
         width={product.image.width}
         height={product.image.height}
