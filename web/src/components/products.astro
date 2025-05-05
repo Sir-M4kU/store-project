@@ -23,7 +23,7 @@ const { products } = Astro.props;
           slug={`${Astro.url.origin}/${product.slug}`}
           price={product.price}
           image={{
-            src: STRAPI_URL + product.image.url,
+            src: product.image.url,
             alt: product.image.caption,
             width: product.image.width,
             height: product.image.height,
