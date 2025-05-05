@@ -15,10 +15,7 @@ export default defineConfig({
   }),
   integrations: [preact()],
   vite: {
-    plugins: [tailwindcss()],
-    ssr: {
-      external: ["node:tty", "node:os"]
-    }
+    plugins: [tailwindcss()]
   },
   env: {
     validateSecrets: false,
