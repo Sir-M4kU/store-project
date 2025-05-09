@@ -31,7 +31,7 @@ async function fetchStrapi<T>(collection: string, query: Partial<QueryParams>) {
   const req = await fetch(url, { headers: BASE_HEADERS })
 
   if (!req.ok) {
-    console.log({ req })
+    console.log({ url, req })
     console.error(`[${req.status}] ${req.statusText}`)
 
     return null
