@@ -21,7 +21,6 @@ export default defineConfig({
     validateSecrets: false,
     schema: {
       STRAPI_TOKEN: envField.string({ context: "client", access: "public" }),
-      STRIPE_TOKEN: envField.string({ context: "client", access: "public" }),
       STRIPE_SECRET: envField.string({ context: "server", access: "secret" }),
       STRAPI_URL: envField.string({ context: "client", access: "public" })
     }
