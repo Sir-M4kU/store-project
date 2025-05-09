@@ -1,15 +1,6 @@
 import { STRAPI_URL, STRAPI_TOKEN } from "astro:env/client"
 import type { ImageData, ProductData, CategoryData } from "@/types/strapi"
-// import { strapi } from "@strapi/client"
-import Strapi from "strapi-sdk-js"
-
-// const strapiClient = strapi({
-//   baseURL: `${STRAPI_URL}/api`,
-//   auth: STRAPI_TOKEN
-// })
-const strapiClient = new Strapi({
-  url: STRAPI_URL
-})
+import qs from "qs"
 
 interface Product extends ProductData {
   image: ImageData
@@ -17,14 +8,54 @@ interface Product extends ProductData {
 interface ProductWithType extends Product {
   type: CategoryData[]
 }
+interface QueryParams {
+  filters: object
+  locale: string
+  status: "published" | "draft"
+  populate: string | object
+  fields: Array<string>
+  sort: string | Array<string>
+  pagination: Partial<{
+    page: number
+    pageSize: number
+    withCount: boolean
+  }>
+}
 
-strapiClient.axios.defaults.headers.common["Authorization"] = `Bearer ${STRAPI_TOKEN}`
+const BASE_HEADERS = new Headers({ Authorization: `Bearer ${STRAPI_TOKEN}` })
+const BASE_URL = `${STRAPI_URL}/api`
 
-// const OrderCollection = strapiClient.collection("orders")
-// const ProductCollection = strapiClient.collection("products")
+async function fetchStrapi<T>(collection: string, query: Partial<QueryParams>) {
+  const q = qs.stringify(query, { addQueryPrefix: true })
+  const url = `${BASE_URL}/${collection}${q}`
+  const req = await fetch(url, { headers: BASE_HEADERS })
+
+  if (!req.ok) {
+    console.log({ req })
+    console.error(`[${req.status}] ${req.statusText}`)
+
+    return null
+  }
+
+  return req.json().then(({ data }) => data as Array<T>)
+}
+
+async function createDocument<T>(collection: string, data: T) {
+  const url = `${BASE_URL}/${collection}`
+  const headers = new Headers({ Authorization: `Bearer ${STRAPI_TOKEN}`, "Content-Type": "application/json" })
+  const req = await fetch(url, { headers, method: "POST", body: JSON.stringify({ data }) })
+
+  if (!req.ok) {
+    console.error(`[${req.status}] ${req.statusText}`)
+
+    return null
+  }
+
+  return req.json().then(({ data }) => data)
+}
 
 async function getProductsByCategories(categories: Array<string>) {
-  return strapiClient.find<Product>("products", {
+  return fetchStrapi<Product>("products", {
     filters: {
       type: {
         name: {
@@ -40,69 +71,49 @@ async function getProductsByCategories(categories: Array<string>) {
     },
     sort: "createdAt:desc",
     pagination: {
-      page: 0,
       pageSize: 4,
-    },
-  }).then(({ data }) => data).catch((err) => {
-    console.error(err)
-    return null
+    }
   })
 }
 
 async function getProductsByCategory(category: string) {
-  return strapiClient
-    .find<Product>("products", {
-      filters: {
-        type: {
-          name: {
-            $eq: category,
-          },
+  return fetchStrapi<Product>("products", {
+    filters: {
+      type: {
+        name: {
+          $eq: category,
         },
       },
-      fields: ["name", "price", "slug"],
-      populate: {
-        image: {
-          fields: ["caption", "width", "height", "url"]
-        }
-      },
-      pagination: {
-        page: 0,
-        pageSize: 4
-      },
-      state: "published"
-    })
-    .then(({ data }) => data)
-    .catch((err) => {
-      console.error(err)
-      return null
-    })
+    },
+    fields: ["name", "price", "slug"],
+    populate: {
+      image: {
+        fields: ["caption", "width", "height", "url"]
+      }
+    },
+    pagination: {
+      pageSize: 4
+    }
+  })
 }
 
 async function getRecentProducts() {
-  return strapiClient
-    .find<Product>("products", {
-      sort: "createdAt:desc",
-      fields: ["name", "price", "slug"],
-      populate: {
-        image: {
-          fields: ["caption", "width", "height", "url"],
-        },
+  return fetchStrapi<Product>("products", {
+    sort: "createdAt:desc",
+    fields: ["name", "price", "slug"],
+    populate: {
+      image: {
+        fields: ["caption", "width", "height", "url"],
       },
-      pagination: {
-        page: 0,
-        pageSize: 16,
-      },
-      state: "published",
-    })
-    .then(({ data }) => data)
-    .catch((err) => {
-      console.error(err);
-      return null;
-    })
+    },
+    pagination: {
+      pageSize: 16,
+    }
+  })
 }
 
 async function getProductBySlug(slug: string) {
-  return strapiClient.find<ProductWithType>("products", {
+  return fetchStrapi<ProductWithType>("products", {
     filters: {
       slug: {
         $eq: slug
@@ -117,18 +128,16 @@ async function getProductBySlug(slug: string) {
         fields: ["name"],
       }
     }
-  }).then(({ data }) => data[0]).catch((err) => {
-    console.error(err)
-    return null
-  })
+  }).then((data) => data && data[0])
 }
 
 export {
-  strapiClient,
+  BASE_HEADERS,
+  BASE_URL,
+  fetchStrapi,
+  createDocument,
   getRecentProducts,
   getProductsByCategory,
   getProductBySlug,
   getProductsByCategories
-  // OrderCollection,
-  // ProductCollection
 }

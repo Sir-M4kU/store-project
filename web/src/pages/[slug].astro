@@ -10,7 +10,7 @@ import Skeleton from "@/components/skeleton.astro";
 
 const { slug } = Astro.params;
 
-const product = await getProductBySlug(slug);
+const product = await getProductBySlug(slug as string);
 
 if (!product) {
   Astro.response.status = 404;

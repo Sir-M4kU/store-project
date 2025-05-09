@@ -1,7 +1,7 @@
 import type { APIContext } from "astro"
-import { strapiClient } from "@/libs/strapi"
 import { stripe } from "@/libs/stripe"
 import type { ProductData, ImageData, OrderData } from "@/types/strapi"
+import { createDocument, fetchStrapi } from "@/libs/strapi"
 import { z } from "astro:content"
 
 interface Product extends ProductData {
@@ -18,7 +18,6 @@ const bodySchema = z.object({
 export async function POST({ request, url }: APIContext) {
   const body = await request.json()
   const referer = request.headers.get("referer")
-
   const result = await bodySchema.safeParseAsync(body)
 
   if (!result.success) {
@@ -31,7 +30,7 @@ export async function POST({ request, url }: APIContext) {
   const idItems = items.map((item) => item.documentId)
 
   try {
-    const documents = await strapiClient.find<Product>("products", {
+    const documents = await fetchStrapi<Product>("products", {
       filters: {
         documentId: {
           $in: idItems
@@ -43,7 +42,7 @@ export async function POST({ request, url }: APIContext) {
           fields: ["url"]
         }
       }
-    }).then(({ data }) => data.map((item) => {
+    }).then((data) => data?.map((item) => {
       const index = items.findIndex((i) => i.documentId === item.documentId)
 
       return {
@@ -51,7 +50,7 @@ export async function POST({ request, url }: APIContext) {
         quantity: items[index].quantity
       }
     }))
-    const line_items = documents.map((item) => ({
+    const line_items = documents?.map((item) => ({
       price_data: {
         currency: "usd",
         product_data: {
@@ -69,7 +68,7 @@ export async function POST({ request, url }: APIContext) {
       cancel_url: referer || url.origin,
       success_url: `${url.origin}/checkout?session_id={CHECKOUT_SESSION_ID}`
     })
-    await strapiClient.create<OrderData>("orders", { items: line_items, stripe_session: session.id })
+    await createDocument<{ items?: typeof line_items; stripe_session: string }>("orders", { items: line_items, stripe_session: session.id })
 
     return Response.json({ session_id: session.id, session_url: session.url }, { status: 201 })
   } catch (error) {
